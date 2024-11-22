@@ -9,7 +9,8 @@ from processing_methods import find_objects_by_threshold, \
     find_objects_by_template_matching, \
     find_objects_by_multiple_template_matching, \
     find_objects_by_manual_annotation, \
-    find_objects_by_semiautomatic_annotation
+    find_objects_by_semiautomatic_annotation, \
+    find_coordinates_by_overlap
 
 import warnings
 from utils import available_wells, load_well, stitch_arrays, get_xml_mes_template_from_file, \
@@ -41,7 +42,7 @@ def main():
     parser.add_argument('-p', '--plot_output', type=bool, default=True,
                         help='Whether to generate plots of the results.')
     parser.add_argument('-m', '--method', type=str, default='template',
-                        help="""Method to use for object detection. Either `template`, 'multi-template', `threshold` or 'manual'. Make sure you
+                        help="""Method to use for object detection. Either `template`, 'multi-template', `threshold`, 'manual' or 'find_coordinates_by_overlap'. Make sure you
                         specify the required arguments for the method you chose.""")
     parser.add_argument('-nx', '--n_tiles_x', type=int, default=4, help='Number of tiles per well in x.')
     parser.add_argument('-ny', '--n_tiles_y', type=int, default=5, help='Number of tiles per well in y.')
@@ -129,8 +130,10 @@ def main():
                                                                             )
 
         elif args.method == 'find_coordinates_by_overlap':
-            objects, non_objects = find_objects_by_overlap(stitched_ds,
-                                                           overlap=args.overlap,
+            objects, non_objects = find_coordinates_by_overlap(stitched_ds,
+                                                               overlap=args.overlap,
+                                                               downsampling=args.downsampling,
+
                                                            )
 
         else:
