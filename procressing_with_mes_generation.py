@@ -1,5 +1,6 @@
 import argparse
 import logging
+import napari
 from pathlib import Path
 
 import numpy as np
@@ -134,12 +135,42 @@ def main():
                                                                             )
 
         elif args.method == 'find_coordinates_by_overlap':
+
+            if args.perform_preselection:
+                if i==0:
+                    # in napari, annotate the region that should be imaged
+                    viewer = napari.Viewer()
+                    viewer.add_image(stitched_ds)
+                    # rescale stitched image
+                    low, high = np.quantile(stitched_ds, [0.0001, 0.9999])
+                    viewer.layers['stitched_ds'].contrast_limits = [low, high]
+                    viewer.add_shapes(None)
+                    viewer.layers['Shapes'].mode = 'add_rectangle'
+                    viewer.show(block=True)
+
+                    # get y and x start and end coordinates
+                    selection_coords = viewer.layers['Shapes'].data[0]
+                    y_min = int(np.min([x[0] for x in selection_coords]))
+                    y_max = int(np.max([x[0] for x in selection_coords]))
+                    x_min = int(np.min([x[1] for x in selection_coords]))
+                    x_max = int(np.max([x[1] for x in selection_coords]))
+
+                    # Get the shape of the stitched image
+                    shape = (y_max - y_min, x_max - x_min)
+
+            else:
+                shape = stitched_ds.shape
+                x_min = 0
+                y_min = 0
+
             objects, non_objects = find_coordinates_by_overlap(stitched_ds,
                                                                overlap=args.overlap,
                                                                downsampling=args.downsampling,
                                                                second_pass_magnification=args.second_pass_magnification,
-                                                               perform_preselection=args.perform_preselection,
-                                                           )
+                                                               shape=shape,
+                                                               y_min=y_min,
+                                                               x_min=x_min,
+                                                               )
 
         else:
             raise NotImplementedError(f"Method `{args.method}` is not available. Use either `template` or `threshold`.")
