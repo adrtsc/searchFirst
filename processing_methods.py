@@ -178,7 +178,8 @@ def find_objects_by_semiautomatic_annotation(stitched_ds, sigma, minimum_object_
 
 
 def find_coordinates_by_overlap(stitched_ds: np.ndarray, overlap: float,
-                                downsampling: float):
+                                downsampling: float,
+                                second_pass_magnification: int = 40):
     '''
     This function places ROI's on the grid based on the user defined
     overlap percentage.
@@ -206,8 +207,8 @@ def find_coordinates_by_overlap(stitched_ds: np.ndarray, overlap: float,
 
     # define the tile size
     tile_shape = (2160, 2560)
-    tile_shape = (int(tile_shape[0] * downsampling),
-                  int(tile_shape[1] * downsampling))
+    tile_shape = (int(tile_shape[0]/second_pass_magnification*10 * downsampling),
+                  int(tile_shape[1]/second_pass_magnification*10 * downsampling))
 
     # how many tiles can fit in x and y direction
     n_x = int(np.floor((shape[1] - 2*tile_shape[1]*overlap) / (tile_shape[1]*(1-overlap))))
