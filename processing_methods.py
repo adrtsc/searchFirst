@@ -179,7 +179,8 @@ def find_objects_by_semiautomatic_annotation(stitched_ds, sigma, minimum_object_
 
 def find_coordinates_by_overlap(stitched_ds: np.ndarray, overlap: float,
                                 downsampling: float,
-                                second_pass_magnification: int = 40):
+                                second_pass_magnification: int = 40,
+                                perform_preselection: bool = False):
     '''
     This function places ROI's on the grid based on the user defined
     overlap percentage.
@@ -192,6 +193,8 @@ def find_coordinates_by_overlap(stitched_ds: np.ndarray, overlap: float,
         The overlap in percent (0-1).
     downsampling: float
         The downsampling factor.
+    perform_preselection: bool
+        If True, the user can select the region of interest in napari.
 
     Returns:
     --------
@@ -201,8 +204,32 @@ def find_coordinates_by_overlap(stitched_ds: np.ndarray, overlap: float,
         The unselected objects.
     '''
 
-    # Get the shape of the stitched image
-    shape = stitched_ds.shape
+    if perform_preselection:
+        # in napari, annotate the region that should be imaged
+        viewer = napari.Viewer()
+        viewer.add_image(stitched_ds)
+        # rescale stitched image
+        low, high = np.quantile(stitched_ds, [0.0001, 0.9999])
+        viewer.layers['stitched_ds'].contrast_limits = [low, high]
+        viewer.add_shapes(None)
+        viewer.layers['Shapes'].mode = 'add_rectangle'
+        viewer.show(block=True)
+
+        # get y and x start and end coordinates
+        selection_coords = viewer.layers['Shapes'].data[0]
+        y_max = int(np.max([x[0] for x in selection_coords]))
+        y_min = int(np.min([x[0] for x in selection_coords]))
+        x_max = int(np.max([x[1] for x in selection_coords]))
+        x_min = int(np.min([x[1] for x in selection_coords]))
+
+        # Get the shape of the stitched image
+        shape = (y_max - y_min, x_max - x_min)
+
+    else:
+        shape = stitched_ds.shape
+        x_min = 0
+        y_min = 0
+
     logging.info(f"stitched image shape: {shape}")
 
     # define the tile size
@@ -224,10 +251,10 @@ def find_coordinates_by_overlap(stitched_ds: np.ndarray, overlap: float,
     offset_y = (shape[0] - len_y) / 2
 
     # find the centroid of each tile so that they have the correct overlap
-    x_centroids = np.linspace(tile_shape[1]/2 + offset_x,
-                              (len_x - tile_shape[1]/2) + offset_x, n_x)
-    y_centroids = np.linspace(tile_shape[0]/2 + offset_y,
-                              (len_y - tile_shape[0]/2) + offset_y, n_y)
+    x_centroids = np.linspace(tile_shape[1]/2 + offset_x + x_min,
+                              (len_x - tile_shape[1]/2) + offset_x + x_min, n_x)
+    y_centroids = np.linspace(tile_shape[0]/2 + offset_y + y_min,
+                              (len_y - tile_shape[0]/2) + offset_y + y_min, n_y)
 
     selected_objects = np.empty(np.shape(stitched_ds))
 

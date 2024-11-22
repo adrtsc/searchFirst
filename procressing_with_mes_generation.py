@@ -66,6 +66,10 @@ def main():
     # Find coordinates by Overlap arguments
     parser.add_argument('-o', '--overlap', type=float, default=0.1,
                         help='Overlap between FOVs in percent (0-1).')
+    parser.add_argument('-spm', '--second_pass_magnification', type=float, default=40,
+                        help='Magnification of the second pass.')
+    parser.add_argument('-ps', '--perform_preselection', type=bool, default=True,
+                        help='Whether to perform preselection of regions in napari.')
 
     args = parser.parse_args()
 
@@ -133,7 +137,8 @@ def main():
             objects, non_objects = find_coordinates_by_overlap(stitched_ds,
                                                                overlap=args.overlap,
                                                                downsampling=args.downsampling,
-
+                                                               second_pass_magnification=args.second_pass_magnification,
+                                                               perform_preselection=args.perform_preselection,
                                                            )
 
         else:
