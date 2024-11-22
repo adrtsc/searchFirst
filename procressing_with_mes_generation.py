@@ -62,6 +62,10 @@ def main():
     parser.add_argument('-mos', '--minimum_object_size', type=int, default=1000,
                         help='Minimum object size in pixels in the downsampled stitched_ds.')
 
+    # Find coordinates by Overlap arguments
+    parser.add_argument('-o', '--overlap', type=float, default=0.1,
+                        help='Overlap between FOVs in percent (0-1).')
+
     args = parser.parse_args()
 
     fld = Path(args.folder)
@@ -123,6 +127,11 @@ def main():
                                                                             sigma=args.sigma,
                                                                             minimum_object_size=args.minimum_object_size,
                                                                             )
+
+        elif args.method == 'find_coordinates_by_overlap':
+            objects, non_objects = find_objects_by_overlap(stitched_ds,
+                                                           overlap=args.overlap,
+                                                           )
 
         else:
             raise NotImplementedError(f"Method `{args.method}` is not available. Use either `template` or `threshold`.")

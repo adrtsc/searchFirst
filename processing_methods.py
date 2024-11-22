@@ -174,3 +174,60 @@ def find_objects_by_semiautomatic_annotation(stitched_ds, sigma, minimum_object_
     unselected_objects = np.empty(np.shape(stitched_ds))
 
     return selected_objects, unselected_objects
+
+
+
+def find_coordinates_by_overlap(stitched_ds: np.ndarray, overlap: float):
+    '''
+    This function places ROI's on the grid based on the user defined
+    overlap percentage.
+
+    Parameters:
+    -----------
+    stitched_ds: np.ndarray
+        The stitched image.
+    overlap: float
+        The overlap in percent (0-1).
+
+    Returns:
+    --------
+    selected_objects: np.ndarray
+        The selected objects.
+    unselected_objects: np.ndarray
+        The unselected objects.
+    '''
+
+    stitched_ds = np.zeros(shape=(2160*5, 2560*5))
+    overlap = 0.1
+    # Get the shape of the stitched image
+    shape = stitched_ds.shape
+
+    # define the tile size
+    tile_shape = (2160, 2560)
+
+    # how many tiles can fit in x and y direction
+    n_x = int(np.floor((shape[1] - 2*tile_shape[1]*overlap) / (tile_shape[1]*(1-overlap))))
+    n_y = int(np.floor((shape[0] - 2*tile_shape[0]*overlap) / (tile_shape[0]*(1-overlap))))
+
+    logging.info(f"placing a grid with {n_x}*{n_y} tiles and {overlap*100}% overlap.")
+
+    len_x = n_x * tile_shape[1] * (1 - overlap) + tile_shape[1] * overlap
+    len_y = n_y * tile_shape[0] * (1 - overlap) + tile_shape[0] * overlap
+
+    # calculate offsets to center the new grid
+    offset_x = (shape[1] - len_x) / 2
+    offset_y = (shape[0] - len_y) / 2
+
+    # find the centroid of each tile so that they have the correct overlap
+    x_centroids = np.linspace(tile_shape[1]/2 + offset_x,
+                              (len_x - tile_shape[1]/2) + offset_x, n_x)
+    y_centroids = np.linspace(tile_shape[0]/2 + offset_y,
+                              (len_y - tile_shape[0]/2) + offset_y, n_y)
+
+    selected_objects = np.empty(np.shape(stitched_ds))
+
+    for i in y_centroids.astype('int'):
+        selected_objects[i, x_centroids.astype('int')] = 1
+    unselected_objects = np.empty(np.shape(stitched_ds))
+
+    return selected_objects, unselected_objects
